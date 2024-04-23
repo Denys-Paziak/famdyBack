@@ -1,18 +1,24 @@
-const express = require("express");
-const bcrypt = require('bcrypt');
+const express = require('express');
+const bodyParser = require('body-parser');
 const cors = require('cors');
+const mysql = require('mysql');
+
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 
 
-const uuidv4 = require('uuid');
-
 
 const app = express();
-app.use(express.json());
+const port = 3000;
 
-app.use(express.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
+
+
+const uuidv4 = require('uuid');
+app.use(express.json());
 
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -26,7 +32,6 @@ app.use((req, res, next) => {
 
 const secretKey = 'denis';
 
-const mysql = require('mysql');
 const connection = mysql.createConnection({
     host: 'ni514080.mysql.tools',
     user: 'ni514080_famdy',
@@ -351,6 +356,6 @@ app.get("/", (req, res) => {
     res.send("hello world");
 });
 
-app.listen(3002, () => {
+app.listen(port, () => {
     console.log("server start")
 })
