@@ -1,13 +1,17 @@
 const express = require("express");
 const bcrypt = require('bcrypt');
 const cors = require('cors');
-const app = express();
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 
 
 const uuidv4 = require('uuid');
 
+
+const app = express();
+app.use(express.json());
+
+app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 app.use((req, res, next) => {
@@ -16,10 +20,8 @@ app.use((req, res, next) => {
 });
 
 // Middleware для обробки даних JSON
-app.use(express.json());
 
 // Middleware для обробки даних URL-кодування форми
-app.use(express.urlencoded({ extended: true }));
 
 
 const secretKey = 'denis';
