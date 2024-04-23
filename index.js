@@ -10,6 +10,11 @@ const uuidv4 = require('uuid');
 
 app.use(cors());
 
+app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    next();
+});
+
 // Middleware для обробки даних JSON
 app.use(express.json());
 
