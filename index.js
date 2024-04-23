@@ -100,6 +100,12 @@ app.post("/register", (req, res) => {
     });
 });
 
+
+// Маршрут для отримання даних про товар за його ідентифікатором
+app.get("/", (req, res) => {
+    res.send("home");
+});
+
 // Маршрут для отримання даних про товар за його ідентифікатором
 app.get("/product/:id", (req, res) => {
     const productId = req.params.id;
