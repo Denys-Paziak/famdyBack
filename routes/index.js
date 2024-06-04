@@ -107,7 +107,4 @@ router.get("/user_likes", authenticateToken, (req, res) => {
     });
 });
 
-
-
-
 module.exports = router;
