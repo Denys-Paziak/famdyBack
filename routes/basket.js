@@ -35,44 +35,79 @@ router.get("/user_cart", authenticateToken, (req, res) => {
     });
 });
 
-
 router.post("/cart", authenticateToken, (req, res) => {
     const { productId, quantity, size, price, sale, image } = req.body;
-
-    // Extract the user ID from the decoded token
     const userId = req.user.userId;
 
-    // Check if the product already exists in the user's cart
-    connection.query('SELECT * FROM cart WHERE user_id = ? AND product_id = ?', [userId, productId], (error, results, fields) => {
+    console.log("id який получає бекенд" + userId);
+
+    // Перевірка, чи існує користувач з таким ID
+    connection.query('SELECT id FROM users WHERE id = ?', [userId], (error, userResults, fields) => {
         if (error) {
-            console.error('Помилка при перевірці товару у кошику:', error.message);
-            res.status(500).send('Помилка сервера при додаванні товару до кошика');
+            console.error('Помилка при перевірці існування користувача:', error.message);
+            res.status(500).send('Помилка сервера при перевірці існування користувача');
             return;
         }
 
-        if (results.length > 0) {
-            // If the product already exists in the cart, update its quantity, size, price, sale, and image
-            connection.query('UPDATE cart SET quantity = ?, size = ?, price = ?, sale = ?, image = ? WHERE user_id = ? AND product_id = ?', [quantity, size, price, sale, image, userId, productId], (error, results, fields) => {
+        if (userResults.length === 0) {
+            console.error(`Користувач з ID ${userId} не існує`);
+            res.status(400).send('Користувач не існує');
+            return;
+        }
+
+        console.log("Користувач який є в базі даних ", userResults)
+
+        // Перевірка, чи існує товар з таким ID
+        connection.query('SELECT id FROM products WHERE id = ?', [productId], (error, productResults, fields) => {
+            if (error) {
+                console.error('Помилка при перевірці існування товару:', error.message);
+                res.status(500).send('Помилка сервера при перевірці існування товару');
+                return;
+            }
+
+            if (productResults.length === 0) {
+                console.error(`Товар з ID ${productId} не існує`);
+                res.status(400).send('Товар не існує');
+                return;
+            }
+
+            // Перевірка, чи існує товар у кошику користувача
+            connection.query('SELECT * FROM cart WHERE user_id = ? AND product_id = ?', [userId, productId], (error, results, fields) => {
                 if (error) {
-                    console.error('Помилка при оновленні кількості, розміру, ціни, знижки та зображення товару у кошику:', error.message);
-                    res.status(500).send('Помилка сервера при оновленні товару у кошику');
-                    return;
-                }
-                res.status(200).send('Товар успішно оновлено у кошику');
-            });
-        } else {
-            // If the product does not exist in the cart, add it
-            connection.query('INSERT INTO cart (user_id, product_id, quantity, size, price, sale, image) VALUES (?, ?, ?, ?, ?, ?, ?)', [userId, productId, quantity, size, price, sale, image], (error, results, fields) => {
-                if (error) {
-                    console.error('Помилка при додаванні товару до кошика:', error.message);
+                    console.error('Помилка при перевірці товару у кошику:', error.message);
                     res.status(500).send('Помилка сервера при додаванні товару до кошика');
                     return;
                 }
-                res.status(201).send('Товар успішно додано до кошика');
+
+                if (results.length > 0) {
+                    // Якщо товар вже існує у кошику, оновлюємо його кількість, розмір, ціну, знижку та зображення
+                    connection.query('UPDATE cart SET quantity = ?, size = ?, price = ?, sale = ?, image = ? WHERE user_id = ? AND product_id = ?', [quantity, size, price, sale, image, userId, productId], (error, results, fields) => {
+                        if (error) {
+                            console.error('Помилка при оновленні кількості, розміру, ціни, знижки та зображення товару у кошику:', error.message);
+                            res.status(500).send('Помилка сервера при оновленні товару у кошику');
+                            return;
+                        }
+                        res.status(200).send('Товар успішно оновлено у кошику');
+                    });
+                } else {
+                    // Якщо товар не існує у кошику, додаємо його
+
+                    console.log("дані яку я передаю", userId, productId, quantity, size, price, sale, image)
+
+                    connection.query('INSERT INTO cart (user_id, product_id, quantity, size, price, sale, image) VALUES (?, ?, ?, ?, ?, ?, ?)', [userId, productId, quantity, size, price, sale, image], (error, results, fields) => {
+                        if (error) {
+                            console.error('Помилка при додаванні товару до кошика:', error.message);
+                            res.status(500).send('Помилка сервера при додаванні товару до кошика');
+                            return;
+                        }
+                        res.status(201).send('Товар успішно додано до кошика');
+                    });
+                }
             });
-        }
+        });
     });
 });
+
 
 // Видалення товару з кошика
 router.delete("/cart", authenticateToken, (req, res) => {

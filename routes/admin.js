@@ -1,8 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
+const bcrypt = require('bcrypt');
 
 const authenticateToken = require('../middlewares/authenticateToken');
+
+
+function isAdmin(req, res, next) {
+    if (req.user && req.user.username === 'admin@gmail.com') {
+        next();
+    } else {
+        res.status(403).json({ message: 'Access denied' });
+    }
+}
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -32,7 +42,8 @@ connection.connect((err) => {
 });
 
 
-router.get("/", authenticateToken, (req, res) => {
+router.get("/", authenticateToken, isAdmin, (req, res) => {
+
     const combinedQuery = `
         SELECT 
             p.*, 
@@ -142,7 +153,7 @@ router.get("/", authenticateToken, (req, res) => {
 });
 
 
-router.get("/users", authenticateToken, (req, res) => {
+router.get("/users", authenticateToken, isAdmin, (req, res) => {
     const Query = 'SELECT * FROM `users`';
 
     connection.query(Query, (error, users, fields) => {
@@ -160,18 +171,13 @@ router.post('/products', authenticateToken, upload.array('images', 10), (req, re
         return res.status(400).json({ error: 'Файли не завантажені' });
     }
 
-    console.log("ssss")
 
     let { name, price, sale, description, category } = req.body;
 
     price = price + " грн";
     sale = sale + " грн";
 
-    description = description.text
-
     const imagePaths = req.files.map(file => `${req.protocol}://${req.get('host')}/${file.path}`);
-    console.log(imagePaths)
-    console.log("ssss")
 
 
     const query = 'INSERT INTO products (name, images, price, sale, description, category) VALUES (?, ?, ?, ?, ?, ?)';
@@ -191,7 +197,6 @@ router.put('/products/:id', authenticateToken, upload.array('images', 10), (req,
     const { name, price, sale, description, category } = req.body;
     let imagePaths = [];
 
-    console.log(description.text)
 
     if (req.files && req.files.length > 0) {
         imagePaths = req.files.map(file => `${req.protocol}://${req.get('host')}/uploads/${file.filename}`);
@@ -212,7 +217,7 @@ router.put('/products/:id', authenticateToken, upload.array('images', 10), (req,
     });
 });
 
-router.delete('/products/:id', authenticateToken, (req, res) => {
+router.delete('/products/:id', authenticateToken, isAdmin, (req, res) => {
     const { id } = req.params;
 
     const query = 'DELETE FROM products WHERE id = ?';
@@ -227,6 +232,47 @@ router.delete('/products/:id', authenticateToken, (req, res) => {
     });
 });
 
+
+
+
+// Маршрут для видалення користувача
+router.delete('/users/:id', authenticateToken, isAdmin, (req, res) => {
+    const { id } = req.params;
+
+    const query = 'DELETE FROM users WHERE id = ?';
+    const values = [id];
+
+    connection.query(query, values, (error, results) => {
+        if (error) {
+            console.error('Помилка при видаленні користувача:', error.message);
+            return res.status(500).json({ error: 'Помилка на сервері' });
+        }
+        res.status(200).json({ message: 'Користувача успішно видалено' });
+    });
+});
+
+// Маршрут для зміни пароля користувача
+router.put('/users/:id/password', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+
+    try {
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const query = 'UPDATE users SET password = ? WHERE id = ?';
+        const values = [hashedPassword, id];
+
+        connection.query(query, values, (error, results) => {
+            if (error) {
+                console.error('Помилка при зміні пароля користувача:', error.message);
+                return res.status(500).json({ error: 'Помилка на сервері' });
+            }
+            res.status(200).json({ message: 'Пароль успішно змінено' });
+        });
+    } catch (error) {
+        console.error('Помилка при хешуванні пароля:', error.message);
+        return res.status(500).json({ error: 'Помилка на сервері' });
+    }
+});
 
 
 module.exports = router;

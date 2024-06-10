@@ -44,6 +44,8 @@ router.post("/register", (req, res) => {
             // Генеруємо унікальне user_id
             const userId = uuidv4();
 
+            console.log(userId);
+
             // Додаємо нового користувача у базу даних
             connection.query('INSERT INTO users (id, username, password) VALUES (?, ?, ?)', [userId, username, hashedPassword], (error, results, fields) => {
                 if (error) {
@@ -62,9 +64,6 @@ router.post("/register", (req, res) => {
 
 // Вхід користувача
 router.post("/login", (req, res) => {
-
-    console.log("login")
-
     const { username, password } = req.body;
 
     if (!username || !password) {
@@ -92,7 +91,7 @@ router.post("/login", (req, res) => {
             }
 
             // Успішний вхід користувача
-            const token = jwt.sign({ userId: user.id, username: user.username }, secretKey, { expiresIn: '1h' });
+            const token = jwt.sign({ userId: user.id, username: user.username }, secretKey, { expiresIn: '7d' });
             res.status(200).json({ message: "Успішний вхід користувача", token });
         });
     });
