@@ -43,7 +43,6 @@ connection.connect((err) => {
 
 
 router.get("/", authenticateToken, isAdmin, (req, res) => {
-
     const combinedQuery = `
         SELECT 
             p.*, 
@@ -165,20 +164,15 @@ router.get("/users", authenticateToken, isAdmin, (req, res) => {
         res.status(200).json(users);
     });
 });
-
 router.post('/products', authenticateToken, upload.array('images', 10), (req, res) => {
-    if (!req.files) {
-        return res.status(400).json({ error: 'Файли не завантажені' });
-    }
-
-
     let { name, price, sale, description, category } = req.body;
 
-    price = price + " грн";
-    sale = sale + " грн";
+    price += " грн";
+    sale += " грн";
 
-    const imagePaths = req.files.map(file => `${req.protocol}://${req.get('host')}/${file.path}`);
-
+    let imagePaths = req.files && req.files.length > 0 ?
+        req.files.map(file => `${req.protocol}://${req.get('host')}/uploads/${file.filename}`) :
+        [`${req.protocol}://${req.get('host')}/uploads/default.jpg`]; // Стандартне зображення, якщо файлів немає
 
     const query = 'INSERT INTO products (name, images, price, sale, description, category) VALUES (?, ?, ?, ?, ?, ?)';
     const values = [name, JSON.stringify(imagePaths), price, sale, description, category];
@@ -197,9 +191,10 @@ router.put('/products/:id', authenticateToken, upload.array('images', 10), (req,
     const { name, price, sale, description, category } = req.body;
     let imagePaths = [];
 
-
     if (req.files && req.files.length > 0) {
         imagePaths = req.files.map(file => `${req.protocol}://${req.get('host')}/uploads/${file.filename}`);
+    } else {
+        imagePaths = undefined; // Не вносимо зміни в зображення, якщо нові не передані
     }
 
     const query = `
@@ -216,6 +211,7 @@ router.put('/products/:id', authenticateToken, upload.array('images', 10), (req,
         res.status(200).json({ message: 'Товар успішно оновлений' });
     });
 });
+
 
 router.delete('/products/:id', authenticateToken, isAdmin, (req, res) => {
     const { id } = req.params;
