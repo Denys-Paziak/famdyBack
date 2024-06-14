@@ -47,7 +47,7 @@ router.get("/product/:id", (req, res) => {
 });
 
 router.get("/products", (req, res) => {
-    connection.query('SELECT * FROM products', (error, results, fields) => {
+    connection.query('SELECT * FROM products ORDER BY ASC', (error, results, fields) => {
         if (error) throw error;
         res.send(results);
     });
