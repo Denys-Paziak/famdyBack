@@ -109,14 +109,11 @@ router.post("/cart", authenticateToken, (req, res) => {
 });
 
 
-// Видалення товару з кошика
 router.delete("/cart", authenticateToken, (req, res) => {
     const { productId } = req.body;
 
-    // Витягнення ідентифікатора користувача з розкодованого токена
     const userId = req.user.userId;
 
-    // Перевірка, чи існує товар у кошику користувача
     connection.query('SELECT * FROM cart WHERE user_id = ? AND product_id = ?', [userId, productId], (error, results, fields) => {
         if (error) {
             console.error('Помилка при перевірці наявності товару в кошику:', error.message);
@@ -125,12 +122,10 @@ router.delete("/cart", authenticateToken, (req, res) => {
         }
 
         if (results.length === 0) {
-            // Якщо товару немає у кошику, повертаємо помилку
             res.status(404).send('Товар не знайдено в кошику користувача');
             return;
         }
 
-        // Видалення товару з кошика
         connection.query('DELETE FROM cart WHERE user_id = ? AND product_id = ?', [userId, productId], (error, results, fields) => {
             if (error) {
                 console.error('Помилка при видаленні товару з кошика:', error.message);
@@ -146,7 +141,7 @@ router.delete("/cart", authenticateToken, (req, res) => {
 
 router.post('/place-order', authenticateToken, (req, res) => {
     const { fullName, address, city, postalCode, phone, email, paymentMethod, totalAmount } = req.body;
-    const userId = req.user.userId; // Assuming the user ID is available in req.user
+    const userId = req.user.userId;
 
     const orderQuery = `
         INSERT INTO orders (user_id, full_name, address, city, postal_code, phone, email, payment_method, status)
@@ -162,7 +157,7 @@ router.post('/place-order', authenticateToken, (req, res) => {
 
         const orderId = results.insertId;
 
-        // Assuming you have a function to generate payment URL
+
         const paymentUrl = generateFondyPaymentUrl(orderId, totalAmount);
 
         res.status(201).json({ message: 'Замовлення успішно створено', paymentUrl });
