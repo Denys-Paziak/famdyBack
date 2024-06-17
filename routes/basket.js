@@ -114,6 +114,8 @@ router.delete("/cart", authenticateToken, (req, res) => {
 
     const userId = req.user.userId;
 
+    console.log("id який получає бекенд" + productId);
+
     connection.query('SELECT * FROM cart WHERE user_id = ? AND product_id = ?', [userId, productId], (error, results, fields) => {
         if (error) {
             console.error('Помилка при перевірці наявності товару в кошику:', error.message);
